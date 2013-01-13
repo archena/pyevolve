@@ -29,28 +29,35 @@ class GameRunner:
    def play(self, plrA, plrB, max_rounds):
       payoff = 0
 
-      # The initial history is randomised so as to decrease chance of unreached histories
-      prevA = [random.randint(0, 1) for _ in range(self.memory)]
-      prevB = [random.randint(0, 1) for _ in range(self.memory)]
-      #print "History B " + str(prevB[-self.memory:]) + " - History A " + str(prevA[-self.memory:])
+      # The initial history is empty
+      prevA = []
+      prevB = []
 
       for i in range(max_rounds):
          # 0 codes for cooperation
          # 1 codes for betrayal
-         idxA = self.encodeHistory(prevB[-self.memory:])
-         idxB = self.encodeHistory(prevA[-self.memory:])
-         
-         #print "Round " + str(i) + ": A selects " + str(idxA) + " - B selects " + str(idxB)
+         moveA = self.move(plrA, prevB)
+         moveB = self.move(plrB, prevA)
+                  
+         payoff += self.payoff_matrix[moveA][moveB]
 
-         payoff += self.payoff_matrix[plrA[idxA]][plrB[idxB]]
-         # The ith position in the vector states what the plrA's
-         # move will be, given that the plrB previously made move i
+         if i >= self.memory:
+            prevA = prevA[1:]
+            prevB = prevB[1:]
 
-         prevA.append(plrA[idxA])
-         prevB.append(plrB[idxB])
+         prevA.append(moveA)
+         prevB.append(moveB)
 
-         #print "History B " + str(prevB[-self.memory:]) + " - History A " + str(prevA[-self.memory:])
       return payoff
+
+   def move(self, strategy, history):
+      base = self.calculateBase(len(history))
+      offset = self.encodeHistory(history)
+
+      return strategy[base + offset]
+
+   def calculateBase(self, numMoves):
+      return 2**(numMoves) - 1
 
    def encodeHistory(self, history):
       l = len(history) - 1
@@ -61,16 +68,17 @@ class GameRunner:
 game_memory = 3
 game_rounds = 8
 
-genome = G1DList.G1DList(2**game_memory)
+#genome = G1DList.G1DList(2**game_memory)
+genome = G1DList.G1DList(2**(game_memory + 1) - 1)
 ga = GSimpleGA.GSimpleGA(genome)
 
 ga.selector.set(Selectors.GRouletteWheel)
-ga.setPopulationSize(20)
-ga.setGenerations(1000)
+ga.setPopulationSize(25)
+ga.setGenerations(100)
 
 # The payoff matrix for the Prisoner's Dilemma
 # In terms of player A's gains over player B
-pd_payoff = ((1,  0),
+pd_payoff = ((3,  0),
              (12, 3))
 
 gr = GameRunner(ga, pd_payoff, game_memory)
