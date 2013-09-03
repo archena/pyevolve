@@ -12,7 +12,7 @@ def eval_func(chromosome):
     x4 = bool(chromosome[3])
     x5 = bool(chromosome[4])
     x6 = bool(chromosome[5])
-    #    return (p or not q) and (not p or not q) and (p or q) and (q or r)
+
     return (x1 or not x2 or not x3) and \
         (x3 or not x5 or x6) and \
         (x3 or not x6 or x4) and \
